@@ -10,10 +10,6 @@
 
 - [sysbench](#sysbench)
     - [Features](#features)
-- [Installing from Binary Packages](#installing-from-binary-packages)
-    - [Linux](#linux)
-    - [macOS](#macos)
-    - [Windows](#windows)
 - [Building and Installing From Source](#building-and-installing-from-source)
     - [Build Requirements](#build-requirements)
         - [Windows](#windows)
@@ -30,16 +26,15 @@
 
 <!-- markdown-toc end -->
 
-# sysbench
+# sysbench-basic
 
-sysbench is a scriptable multi-threaded benchmark tool based on
-LuaJIT. It is most frequently used for database benchmarks, but can also
-be used to create arbitrarily complex workloads that do not involve a
-database server.
+**sysbench-basic is sysbench's fork but remove LuaJIT and SQL.**
+
+sysbench-basic is a multi-threaded benchmark tool. It is most frequently used for machine benchmarks.
+
 
 sysbench comes with the following bundled benchmarks:
 
-- `oltp_*.lua`: a collection of OLTP-like database benchmarks
 - `fileio`: a filesystem-level benchmark
 - `cpu`: a simple CPU benchmark
 - `memory`: a memory access benchmark
@@ -53,147 +48,47 @@ sysbench comes with the following bundled benchmarks:
 - low overhead even with thousands of concurrent threads. sysbench is
   capable of generating and tracking hundreds of millions of events per
   second;
-- new benchmarks can be easily created by implementing pre-defined hooks
-  in user-provided Lua scripts;
-- can be used as a general-purpose Lua interpreter as well, simply
-  replace `#!/usr/bin/lua` with `#!/usr/bin/sysbench` in your script.
-
-# Installing from Binary Packages
-
-## Linux
-
-The easiest way to download and install sysbench on Linux is using
-binary package repositories hosted by
-[packagecloud](https://packagecloud.io). The repositories are
-automatically updated on each sysbench release. Currently x86_64, i386
-and aarch64 binaries are available.
-
-Multiple methods to download and install sysbench packages are available and
-described at <https://packagecloud.io/akopytov/sysbench/install>.
-
-Quick install instructions:
-
-- Debian/Ubuntu
-  ``` shell
-  curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | sudo bash
-  sudo apt -y install sysbench
-  ```
-
-- RHEL/CentOS:
-  ``` shell
-  curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.rpm.sh | sudo bash
-  sudo yum -y install sysbench
-  ```
-
-- Fedora:
-  ``` shell
-  curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.rpm.sh | sudo bash	
-  sudo dnf -y install sysbench
-  ```
-
-- Arch Linux:
-  ``` shell
-  sudo pacman -Suy sysbench
-  ```
-
-## macOS
-
-On macOS, up-to-date sysbench packages are available from Homebrew:
-```shell
-# Add --with-postgresql if you need PostgreSQL support
-brew install sysbench
-```
-
-## Windows
-As of sysbench 1.0 support for native Windows builds was dropped. It may
-be re-introduced in later releases. Currently, the recommended way to
-obtain sysbench on Windows is
-using
-[Windows Subsystem for Linux available in Windows 10](https://msdn.microsoft.com/en-us/commandline/wsl/about).
-
-After installing WSL and getting into he bash prompt on Windows
-following Debian/Ubuntu installation instructions is
-sufficient. Alternatively, one can use WSL to build and install sysbench
-from source, or use an older sysbench release to build a native binary.
 
 # Building and Installing From Source
-
-It is recommended to install sysbench from the official binary
-packages as described in
-[Installing from Binary Packages](#installing-from-binary-packages). Below
-are instruction for cases when you want to use sysbench on an
-architecture for which no binary packages are available.
 
 ## Build Requirements
 
 ### Windows
-As of sysbench 1.0 support for native Windows builds was
-dropped. It may be re-introduced in later versions. Currently, the
-recommended way to build sysbench on Windows is using
+Build sysbench on Windows is using
 [Windows Subsystem for Linux available in Windows 10](https://msdn.microsoft.com/en-us/commandline/wsl/about).
 
 After installing WSL and getting into bash prompt on Windows, following
-Debian/Ubuntu build instructions is sufficient. Alternatively, one can
-build and use an older 0.5 release on Windows.
+Debian/Ubuntu build instructions is sufficient.
 
 ### Debian/Ubuntu
 ``` shell
     apt -y install make automake libtool pkg-config libaio-dev
-    # For MySQL support
-    apt -y install libmysqlclient-dev libssl-dev
-    # For PostgreSQL support
-    apt -y install libpq-dev
 ```
 
 ### RHEL/CentOS
 ``` shell
     yum -y install make automake libtool pkgconfig libaio-devel
-    # For MySQL support, replace with mysql-devel on RHEL/CentOS 5
-    yum -y install mariadb-devel openssl-devel
-    # For PostgreSQL support
-    yum -y install postgresql-devel
 ```
 
 ### Fedora
 ``` shell
     dnf -y install make automake libtool pkgconfig libaio-devel
-    # For MySQL support
-    dnf -y install mariadb-devel openssl-devel
-    # For PostgreSQL support
-    dnf -y install postgresql-devel
 ```
 
 ### macOS
 
 Assuming you have Xcode (or Xcode Command Line Tools) and Homebrew installed:
 ``` shell
-    brew install automake libtool openssl pkg-config
-    # For MySQL support
-    brew install mysql
-    # For PostgreSQL support
-    brew install postgresql
-    # openssl is not linked by Homebrew, this is to avoid "ld: library not found for -lssl"
-    export LDFLAGS=-L/usr/local/opt/openssl/lib 
+    brew install automake libtool pkg-config
 ```
 
 ## Build and Install
 ``` shell
     ./autogen.sh
-    # Add --with-pgsql to build with PostgreSQL support
     ./configure
     make -j
     make install
 ```
-
-The above will build sysbench with MySQL support by default. If you have
-MySQL headers and libraries in non-standard locations (and no
-`mysql_config` can be found in the `PATH`), you can specify them
-explicitly with `--with-mysql-includes` and `--with-mysql-libs` options
-to `./configure`.
-
-To compile sysbench without MySQL support, use `--without-mysql`. If no
-database drivers are available database-related scripts will not work,
-but other benchmarks will be functional.
 
 # Usage
 
@@ -249,20 +144,19 @@ The table below lists the supported common options, their descriptions and defau
 
 *Option*              | *Description* | *Default value*
 ----------------------|---------------|----------------
-| `--threads`           | The total number of worker threads to create                                                                                                                                                                                                                                                                                                                                                                                                                            | 1               |
-| `--events`            | Limit for total number of requests. 0 (the default) means no limit                                                                                                                                                                                                                                                                                                                                                                                                      | 0               |
-| `--time`              | Limit for total execution time in seconds. 0 means no limit                                                                                                                                                                                                                                                                                                                                                                                                             | 10              |
-| `--warmup-time`       | Execute events for this many seconds with statistics disabled before the actual benchmark run with statistics enabled. This is useful when you want to exclude the initial period of a benchmark run from statistics. In many benchmarks, the initial period is not representative because CPU/database/page and other caches need some time to warm up                                                                                                                                                                                                                                                                                                  | 0               |
-| `--rate`              | Average transactions rate. The number specifies how many events (transactions) per seconds should be executed by all threads on average. 0 (default) means unlimited rate, i.e. events are executed as fast as possible                                                                                                                                                                                                                                                                 | 0               |
-| `--thread-init-timeout` | Wait time in seconds for worker threads to initialize                                                                                                                                                                                                                                                                                                                                                                                                                  | 30              |
-| `--thread-stack-size` | Size of stack for each thread                                                                                                                                                                                                                                                                                                                                                                                                                                           | 32K             |
-| `--report-interval`   | Periodically report intermediate statistics with a specified interval in seconds. Note that statistics produced by this option is per-interval rather than cumulative. 0 disables intermediate reports                                                                                                                                                                                                                                                                  | 0               |
-| `--debug`             | Print more debug info                                                                                                                                                                                                                                                                                                                                                                                                                                                   | off             |
-| `--validate`          | Perform validation of test results where possible                                                                                                                                                                                                                                                                                                                                                                                                                       | off             |
-| `--help`              | Print help on general syntax or on a specified test, and exit                                                                                                                                                                                                                                                                                                                                                                                                           | off             |
-| `--verbosity`         | Verbosity level (0 - only critical messages, 5 - debug)                                                                                                                                                                                                                                                                                                                                                                                                                 | 4               |
-| `--percentile`        | sysbench measures execution times for all processed requests to display statistical information like minimal, average and maximum execution time. For most benchmarks it is also useful to know a request execution time value matching some percentile (e.g. 95% percentile means we should drop 5% of the most long requests and choose the maximal value from the remaining ones). This option allows to specify a percentile rank of query execution times to count | 95              |
-| `--luajit-cmd`        | perform a LuaJIT control command. This option is equivalent to `luajit -j`. See [LuaJIT documentation](http://luajit.org/running.html#opt_j) for more information                                                                                                                                                                                                                                                                                                       |               |
+| `--threads`           | The total number of worker threads to create                                                                                                                                                                                                                                                                                                                                                                                                                            
+| `--events`            | Limit for total number of requests. 0 (the default) means no limit                                                                                                                                                                                                                                                                                                                                                                                                      
+| `--time`              | Limit for total execution time in seconds. 0 means no limit                                                                                                                                                                                                                                                                                                                                                                                                             
+| `--warmup-time`       | Execute events for this many seconds with statistics disabled before the actual benchmark run with statistics enabled. This is useful when you want to exclude the initial period of a benchmark run from statistics. In many benchmarks, the initial period is not representative because CPU/database/page and other caches need some time to warm up                                                                                                                                                                                                                                                                                                  
+| `--rate`              | Average transactions rate. The number specifies how many events (transactions) per seconds should be executed by all threads on average. 0 (default) means unlimited rate, i.e. events are executed as fast as possible                                                                                                                                                                                                                                                                 
+| `--thread-init-timeout` | Wait time in seconds for worker threads to initialize                                                                                                                                                                                                                                                                                                                                                                                                                  
+| `--thread-stack-size` | Size of stack for each thread                                                                                                                                                                                                                                                                                                                                                                                                                                           
+| `--report-interval`   | Periodically report intermediate statistics with a specified interval in seconds. Note that statistics produced by this option is per-interval rather than cumulative. 0 disables intermediate reports                                                                                                                                                                                                                                                                  
+| `--debug`             | Print more debug info                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+| `--validate`          | Perform validation of test results where possible                                                                                                                                                                                                                                                                                                                                                                                                                       
+| `--help`              | Print help on general syntax or on a specified test, and exit                                                                                                                                                                                                                                                                                                                                                                                                           
+| `--verbosity`         | Verbosity level (0 - only critical messages, 5 - debug)                                                                                                                                                                                                                                                                                                                                                                                                                 
+| `--percentile`        | sysbench measures execution times for all processed requests to display statistical information like minimal, average and maximum execution time. For most benchmarks it is also useful to know a request execution time value matching some percentile (e.g. 95% percentile means we should drop 5% of the most long requests and choose the maximal value from the remaining ones). This option allows to specify a percentile rank of query execution times to count 
 
 Note that numerical values for all *size* options (like `--thread-stack-size` in this table) may be specified by appending the corresponding multiplicative suffix (K for kilobytes, M for megabytes, G for gigabytes and T for terabytes).
 
@@ -286,7 +180,7 @@ For transparency and insight into its release cycle, and for striving to maintai
 
 Releases will be numbered with the following format:
 
-`<major>.<minor>.<patch>`
+`<major>.<minor>.<patch>-basic`
 
 And constructed with the following guidelines:
 
