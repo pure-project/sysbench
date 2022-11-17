@@ -18,7 +18,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 if USE_BUNDLED_CK
-  CK_DIR = $(distdir)third_party/concurrency_kit
+  CK_DIR = third_party/concurrency_kit
 endif
 
 SUBDIRS = $(CK_DIR) src tests
