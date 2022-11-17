@@ -64,13 +64,12 @@
 # include <limits.h>
 #endif
 
-#include <luajit.h>
+#include <inttypes.h>
 
 #include "sysbench.h"
 #include "sb_options.h"
-#include "sb_lua.h"
-#include "db_driver.h"
 #include "sb_rand.h"
+#include "sb_counter.h"
 #include "sb_thread.h"
 #include "sb_barrier.h"
 
@@ -116,9 +115,6 @@ sb_arg_t general_args[] =
   SB_OPT("help", "print help and exit", "off", BOOL),
   SB_OPT("version", "print version and exit", "off", BOOL),
   SB_OPT("config-file", "File containing command line options", NULL, FILE),
-  SB_OPT("luajit-cmd", "perform LuaJIT control command. This option is "
-         "equivalent to 'luajit -j'. See LuaJIT documentation for more "
-         "information", NULL, STRING),
 
   SB_OPT_END
 };
@@ -447,7 +443,6 @@ static int register_tests(void)
     + register_test_memory(&tests)
     + register_test_threads(&tests)
     + register_test_mutex(&tests)
-    + db_register()
     + sb_rand_register()
     ;
 }
@@ -459,8 +454,8 @@ static int register_tests(void)
 void print_header(void)
 {
   log_text(LOG_NOTICE,
-           "%s (using %s %s)\n",
-           VERSION_STRING, SB_WITH_LUAJIT, LUAJIT_VERSION);
+           "%s\n",
+           VERSION_STRING);
 }
 
 
@@ -481,8 +476,6 @@ void print_help(void)
   sb_rand_print_help();
 
   log_print_help();
-
-  db_print_help();
 
   printf("Compiled-in tests:\n");
   SB_LIST_FOR_EACH(pos, &tests)
@@ -944,11 +937,6 @@ static void *report_thread_proc(void *arg)
   /* Initialize thread-local RNG state */
   sb_rand_thread_init();
 
-  if (sb_lua_loaded() && sb_lua_report_thread_init())
-    return NULL;
-
-  pthread_cleanup_push(sb_lua_report_thread_done, NULL);
-
   log_text(LOG_DEBUG, "Reporting thread started");
 
   /* Wait for the signal from the main thread to start reporting */
@@ -975,8 +963,6 @@ static void *report_thread_proc(void *arg)
     pause_ns = next_ns - curr_ns;
   }
 
-  pthread_cleanup_pop(1);
-
   return NULL;
 }
 
@@ -994,11 +980,6 @@ static void *checkpoints_thread_proc(void *arg)
 
   /* Initialize thread-local RNG state */
   sb_rand_thread_init();
-
-  if (sb_lua_loaded() && sb_lua_report_thread_init())
-    return NULL;
-
-  pthread_cleanup_push(sb_lua_report_thread_done, NULL);
 
   log_text(LOG_DEBUG, "Checkpoints report thread started");
 
@@ -1022,8 +1003,6 @@ static void *checkpoints_thread_proc(void *arg)
 
     report_cumulative();
   }
-
-  pthread_cleanup_pop(1);
 
   return NULL;
 }
@@ -1493,28 +1472,14 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (test == NULL)
-    {
-      if ((test = sb_load_lua(sb_globals.testname)) == NULL)
+    if (test == NULL && sb_globals.cmdname == NULL)
         return EXIT_FAILURE;
-
-      if (sb_globals.cmdname == NULL)
-      {
-        /* No command specified, there's nothing more todo */
-        return test != NULL ? EXIT_SUCCESS: EXIT_FAILURE;
-      }
-    }
   }
   else
   {
     sb_globals.testname = NULL;
-
-    if (SB_ISATTY())
-      log_text(LOG_NOTICE, "Reading the script from the standard input:\n");
-
-    test = sb_load_lua(NULL);
-
-    return test != NULL ? EXIT_SUCCESS : EXIT_FAILURE;
+    print_help();
+    return EXIT_FAILURE;
   }
 
   current_test = test;
@@ -1523,11 +1488,7 @@ int main(int argc, char *argv[])
   if (parse_test_arguments(test, argc, argv))
     return EXIT_FAILURE;
 
-  if (sb_lua_loaded() && sb_lua_custom_command_defined(sb_globals.cmdname))
-  {
-    rc =  sb_lua_call_custom_command(sb_globals.cmdname);
-  }
-  else if (!strcmp(sb_globals.cmdname, "help"))
+  if (!strcmp(sb_globals.cmdname, "help"))
   {
     if (test->builtin_cmds.help != NULL)
     {
@@ -1583,11 +1544,6 @@ int main(int argc, char *argv[])
   }
 
 end:
-  if (sb_lua_loaded())
-    sb_lua_done();
-
-  db_done();
-
   sb_counters_done();
 
   log_done();

@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.63)
-AC_INIT([sysbench],[1.1.0],[https://github.com/akopytov/sysbench/issues],
+AC_INIT([sysbench],[1.1.0-basic],[https://github.com/pure-project/sysbench],
         [sysbench], [https://github.com/akopytov/sysbench])
 AC_CONFIG_AUX_DIR([config])
 
@@ -115,32 +115,6 @@ then
 # TODO: Set flags for Gcov-enabled builds, if supported by Sun Studio
 fi
 
-
-# Check if we should compile with MySQL support
-AC_ARG_WITH([mysql],
-            AS_HELP_STRING([--with-mysql],
-                           [compile with MySQL support (default is enabled)]),
-            [], [with_mysql=yes])
-AC_MSG_CHECKING([whether to compile with MySQL support])
-AS_IF([test "x$with_mysql" != "xno"],
-   [mysql_support=yes],
-   [mysql_support=no])
-AC_MSG_RESULT([$mysql_support])
-
-# Check if we should compile with PostgreSQL support
-AC_ARG_WITH([pgsql],
-            AS_HELP_STRING([--with-pgsql],
-                           [compile with PostgreSQL support (default is disabled)]),
-            [], [with_pgsql=no])
-AC_MSG_CHECKING([whether to compile with PostgreSQL support])
-AS_IF([test "x$with_pgsql" != "xno"],
-   [pgsql_support=yes],
-   [pgsql_support=no])
-AC_MSG_RESULT([$pgsql_support])
-
-# Set LuaJIT flags
-SB_LUAJIT
-
 # Set Concurrency Kit flags
 SB_CONCURRENCY_KIT
 
@@ -182,18 +156,6 @@ AC_CHECK_DECLS(O_SYNC, ,
 ACX_PTHREAD
 
 AC_CHECK_LIB(m, sqrt)
-
-SB_CHECK_MYSQL
-
-AS_IF([test x$with_pgsql != xno], [
-    AC_CHECK_PGSQL([$with_pgsql])
-    USE_PGSQL=1
-    AC_DEFINE(USE_PGSQL,1,[Define to 1 if you want to compile with PostgreSQL support])
-    AC_SUBST([PGSQL_LIBS])
-    AC_SUBST([PGSQL_CFLAGS])
-])
-AM_CONDITIONAL(USE_PGSQL, test x$with_pgsql != xno)
-AC_SUBST([USE_PGSQL])
 
 # Check for libaio
 AC_CHECK_AIO
@@ -369,7 +331,7 @@ fi
 
 AM_CFLAGS="${CC_WARNINGS} ${AM_CFLAGS} ${PTHREAD_CFLAGS}"
 
-AM_CPPFLAGS="${AM_CPPFLAGS} -I\$(top_srcdir)/src ${LUAJIT_CFLAGS} ${CK_CFLAGS}"
+AM_CPPFLAGS="${AM_CPPFLAGS} -I\$(top_srcdir)/src ${CK_CFLAGS}"
 
 AM_LDFLAGS="$PTHREAD_LIBS"
 
@@ -392,20 +354,14 @@ AC_SUBST([SB_GIT_SHA])
 
 AC_CONFIG_FILES([
 Makefile
-third_party/luajit/Makefile
 third_party/concurrency_kit/Makefile
 src/Makefile
-src/drivers/Makefile
-src/drivers/mysql/Makefile
-src/drivers/pgsql/Makefile
 src/tests/Makefile
 src/tests/cpu/Makefile
 src/tests/fileio/Makefile
 src/tests/memory/Makefile
 src/tests/threads/Makefile
 src/tests/mutex/Makefile
-src/lua/Makefile
-src/lua/internal/Makefile
 tests/Makefile
 tests/include/config.sh
 snap/snapcraft.yaml
@@ -425,14 +381,6 @@ AC_MSG_RESULT([bindir             : $(eval echo ${bindir})])
 AC_MSG_RESULT([libexecdir         : $(eval echo ${libexecdir})])
 AC_MSG_RESULT([mandir             : $(eval echo ${mandir})])
 AC_MSG_RESULT([datadir            : $(eval echo ${datadir})])
-AC_MSG_RESULT([])
-AC_MSG_RESULT([MySQL support      : ${mysql_support}])
-AC_MSG_RESULT([PostgreSQL support : ${pgsql_support}])
-AC_MSG_RESULT([])
-AC_MSG_RESULT([LuaJIT             : ${sb_use_luajit}])
-AC_MSG_RESULT([LUAJIT_CFLAGS      : ${LUAJIT_CFLAGS}])
-AC_MSG_RESULT([LUAJIT_LIBS        : ${LUAJIT_LIBS}])
-AC_MSG_RESULT([LUAJIT_LDFLAGS     : ${LUAJIT_LDFLAGS}])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([Concurrency Kit    : ${sb_use_ck}])
 if test "$sb_use_ck" = bundled; then
